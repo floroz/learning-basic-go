@@ -3,12 +3,16 @@ package api
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
-func TestGetRate(t *testing.T) {
-	// Create a mock server
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var mockServer *httptest.Server
+var originalGetCexUrl func() string
+
+func TestMain(m *testing.M) {
+	// Setup mock server
+	mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{
@@ -20,16 +24,38 @@ func TestGetRate(t *testing.T) {
             "bid": 54000.00
         }`))
 	}))
-	defer mockServer.Close()
 
+	// Save the original getCexUrl function
+	originalGetCexUrl = getCexUrl
+
+	// Run tests
+	code := m.Run()
+
+	// Teardown mock server
+	mockServer.Close()
+
+	// Restore the original getCexUrl function
+	getCexUrl = originalGetCexUrl
+
+	// Exit with the test code
+	os.Exit(code)
+}
+
+func setup() {
 	// Override the getCexUrl function to return the mock server URL
-	originalGetCexUrl := getCexUrl
 	getCexUrl = func() string {
 		return mockServer.URL
 	}
-	defer func() {
-		getCexUrl = originalGetCexUrl
-	}()
+}
+
+func teardown() {
+	// Restore the original getCexUrl function
+	getCexUrl = originalGetCexUrl
+}
+
+func TestGetRate(t *testing.T) {
+	setup()
+	defer teardown()
 
 	// Call the function with the mock server URL
 	cryptoRate, err := GetRate("BTC", "USD")
