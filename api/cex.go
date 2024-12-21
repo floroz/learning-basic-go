@@ -12,15 +12,6 @@ import (
 	"danieletortora.com/cryptomaster/models"
 )
 
-type GetRateResponseBody struct {
-	Timestamp string  `json:"timestamp"`
-	Low       string  `json:"low"`
-	High      string  `json:"high"`
-	Last      string  `json:"last"`
-	Ask       float64 `json:"ask"`
-	Bid       float64 `json:"bid"`
-}
-
 // Function variable to get the API URL, can be overridden in tests
 var getCexUrl = func() string {
 	return config.CexUrl
