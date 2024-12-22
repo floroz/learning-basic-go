@@ -21,24 +21,18 @@ func serveJSON(w http.ResponseWriter, r *http.Request) {
 	w.Write(encoded)
 }
 
-func serverStaticFile(w http.ResponseWriter, r *http.Request) {
-	name := r.PathValue("name")
-	log.Printf("filename: %v", name)
-
-	wd, _ := os.Getwd()
-
-	filePath := filepath.Join(wd, "static", name)
-	content, _ := os.ReadFile(filePath)
-
-	w.Header().Add("Content-Type", "application/html")
-	w.Write(content)
-}
-
 func main() {
 	mux := http.NewServeMux()
 
+	wd, _ := os.Getwd()
+	filePath := filepath.Join(wd, "static")
+
+	fs := http.FileServer(http.Dir(filePath))
+
+	// Server JSON responses
 	mux.HandleFunc("GET /data", serveJSON)
-	mux.HandleFunc("GET /static/{name}", serverStaticFile)
+	// Server Static files
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	err := http.ListenAndServe(":8080", mux)
 
